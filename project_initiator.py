@@ -3,6 +3,7 @@ import os
 from utilities import Utilities
 from feature_extractor import FeatureExtractor
 from data_point_selector import DataPointSelector
+from model_runner import ModelRunner
 
 class Initiator:        
 
@@ -32,7 +33,8 @@ class Initiator:
         else: 
             print("Feature Vector CSV found in directory, continuing to Model Runner")
         
-        
+        runner = ModelRunner(path_to_base_folder)
+        runner.create_dataset()
         
         
         
