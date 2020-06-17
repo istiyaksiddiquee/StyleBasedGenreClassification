@@ -1,0 +1,59 @@
+features that I will extract and use 
+
+count based 
+
+1. sentence count per chunk	-> done 
+2. average sentence length (from 1) -> done
+3. word count per sentence (basically 2)
+4. character per word/word length (use citation from the folder) may be remove stop words before this -> done 
+5. long word count (more than 6 char) 
+
+grammar 
+
+3. noun count 
+4. verb count
+5. adverb count 
+6. preposition count 
+7. adjective count 
+8. article (a, an, the) count 
+11. length of adjective phrases 
+12. participle count (past, present) 
+13. gerund count 
+14. infinitive count
+14. punctuation mark count per chunk 
+16. demostrative pronoun
+17. amplifiers
+18. downtoners 
+
+ratio based 
+type token ratio 
+
+
+
+
+
+
+for ease of calculation, we are collating all the averages and summing and making an average of all of them. 
+So, if we calculate these lexical metrics on every chunk, and then take an average of all the values of all 
+the chunks of a book, then we'll arrive at a number that is far away from the true value. The designer is well aware 
+of the situation, but the logic to do it this way is as we're calculating every book the same way, so the 
+error will be there in every book. 
+
+
+
+
+
+vocab_size, unique_vocab_size, noun_count, verb_count, adverb_count, preposition_count, adjective_count, article_count, infinitive_gerund_count, article_count, downtoner_count, amplifier_count, demonstrative_count
+sentence_count, total_words, char_count, long_word_count
+
+
+
+Runner -> run model_driver, if there is a csv of features, run feature extractor if there is a csv on book list, run DataPointSelector if there is noting 
+LinguisticAnalysis -> perform linguistic analysis of each chunk 
+FeatureSelector -> get a feature vector, run a few tests on the vector and report best combination 
+DataPointSelector -> mine csv, then select set of books, create df using book_id and genre, write csv using df 
+FeatureExtractor -> get a df from csv, get those files, chunk them, get feature value for each chunk, create an entry for each book, write csv 
+ModelDriver -> get csv, create df, make dataset, (optionally run df through feature selector) fit different model on df 
+
+name of feature csv -> feature_vector.csv 
+name of data point csv -> datapoints.csv 
