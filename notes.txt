@@ -65,8 +65,8 @@ name of data point csv -> datapoints.csv
 multinomial logistic regression 
 multinomial naive bayes 
 non linear svm 
+random forrest
 neural network 
-
 
 
 

@@ -11,6 +11,7 @@ from sklearn.svm import LinearSVC
 from sklearn.pipeline import Pipeline
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 
 from sklearn import metrics
 
@@ -37,30 +38,39 @@ class ModelRunner:
         Y = df.iloc[:, -1].to_numpy()        
 
         multi_model_start_time = time()
-        svm_acc, nb_acc, lr_acc = self.run_multiple_model(X, Y)
+        svm_acc, nb_acc, lr_acc, rf_acc = self.run_multiple_model(X, Y)
         multi_model_end_time = time()
 
         nn_start_time = time()
         nn_acc = self.run_nn(X, Y)
         nn_end_time = time()
         
+        val_acc_svm, test_svm = svm_acc
+        val_acc_nb, test_nb = nb_acc
+        val_acc_logistic, test_logistic = lr_acc
+        val_acc_rf, test_rf = rf_acc
+
+        print("Performance Report")
+        print("--------------------------------------")
         print("SVM Report")
-        print("validation accuracy: {}, test accuracy: {}".format(svm_acc))
-
-
-        print("Average Validation Accuracy")
-        print("SVM: {}; Logistic: {}; NB: {}".format(round(val_acc_svm, 4), round(val_acc_logistic, 4), round(val_acc_nb, 4)))
-
-        print("Test Accuracy")
-        print("SVM: {}; Logistic: {}; NB: {}".format(round(test_svm, 4), round(test_logit, 4), round(test_nb, 4)))
-
-        print("Test Accuracy")
-        print("SVM: {}; Logistic: {}; NB: {}".format(round(test_svm, 4), round(test_logit, 4), round(test_nb, 4)))
-
-
-
+        print("validation accuracy: {}, test accuracy: {}".format(val_acc_svm, test_svm))
         
-        # print("Total time : {} minutes".format(total/60))
+        print("Multi-NB Report")
+        print("validation accuracy: {}, test accuracy: {}".format(val_acc_nb, test_nb))
+        
+        print("Multi-Logistic Report")
+        print("validation accuracy: {}, test accuracy: {}".format(val_acc_logistic, test_logistic))
+
+        print("Random-Forrest Report")
+        print("validation accuracy: {}, test accuracy: {}".format(val_acc_rf, test_rf))
+
+        print("Neural Net Report")
+        print("Accuracy: {}".format(nn_acc))
+        
+        print("Timing Report")
+        print("--------------------------------------")
+        print("Neural-Network : {} minutes".format((nn_end_time-nn_start_time)/60))
+        print("Rest of the algo : {} minutes".format((multi_model_end_time-multi_model_start_time)/60))
         
         return
 
@@ -110,6 +120,7 @@ class ModelRunner:
         val_acc_svm = 0
         val_acc_logistic = 0
         val_acc_nb = 0
+        val_acc_rf = 0
 
         X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.20, random_state = 0, shuffle=True, stratify = Y)
 
@@ -122,18 +133,20 @@ class ModelRunner:
             
             val_acc_svm += self.perform_SVM(X_train, Y_train, X_val, Y_val)
             val_acc_logistic += self.perform_Logistic(X_train, Y_train, X_val, Y_val)
-            val_acc_nb += self.perform_NB(X_train, Y_train, X_val, Y_val)            
+            val_acc_nb += self.perform_NB(X_train, Y_train, X_val, Y_val)    
+            val_acc_rf += self.perform_random_forrest(X_train, Y_train, X_val, Y_val)        
 
         val_acc_svm = float(val_acc_svm/5)
         val_acc_logistic = float(val_acc_logistic/5)
         val_acc_nb = float(val_acc_nb/5) 
-
+        val_acc_rf = float(val_acc_rf/5) 
         
-        test_svm = self.perform_SVM(X_train, Y_train, X_val, Y_val)
-        test_logit = self.perform_Logistic(X_train, Y_train, X_val, Y_val)
-        test_nb = self.perform_NB(X_train, Y_train, X_val, Y_val)                
+        test_svm = self.perform_SVM(X_train, Y_train, X_test, Y_test)
+        test_logit = self.perform_Logistic(X_train, Y_train, X_test, Y_test)
+        test_nb = self.perform_NB(X_train, Y_train, X_test, Y_test)
+        test_rf = self.perform_random_forrest(X_train, Y_train, X_test, Y_test)
 
-        return (val_acc_svm, test_svm), (val_acc_nb, test_nb), (val_acc_logistic, test_logit)
+        return (val_acc_svm, test_svm), (val_acc_nb, test_nb), (val_acc_logistic, test_logit), (val_acc_rf, test_rf)
         
 
     def perform_SVM(self, X_train, Y_train, X_val, Y_val):
@@ -167,3 +180,11 @@ class ModelRunner:
         nb.fit(X_train, Y_train)
         Y_pred_nb = nb.predict(X_val)
         return metrics.accuracy_score(Y_val, Y_pred_nb)
+
+    def perform_random_forrest(self, X_train, Y_train, X_val, Y_val):
+
+        clf = RandomForestClassifier(max_depth=2, random_state=0)
+        clf.fit(X_train, Y_train)
+
+        Y_pred = clf.predict(X_val)
+        return metrics.accuracy_score(Y_val, Y_pred)
