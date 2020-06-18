@@ -57,3 +57,24 @@ ModelDriver -> get csv, create df, make dataset, (optionally run df through feat
 
 name of feature csv -> feature_vector.csv 
 name of data point csv -> datapoints.csv 
+
+
+
+
+
+multinomial logistic regression 
+multinomial naive bayes 
+non linear svm 
+neural network 
+
+
+
+
+
+
+
+
+python -m pip install chardet numpy pandas nltk sklearn tensorflow 
+
+
+

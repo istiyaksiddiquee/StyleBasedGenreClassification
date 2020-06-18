@@ -34,7 +34,7 @@ class Initiator:
             print("Feature Vector CSV found in directory, continuing to Model Runner")
         
         runner = ModelRunner(path_to_base_folder)
-        runner.create_dataset()
+        runner.drive_model_runner()
         
         
         
