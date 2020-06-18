@@ -1,5 +1,5 @@
 import os 
-import time
+from time import time
 import numpy as np
 import pandas as pd 
 
@@ -14,6 +14,9 @@ from sklearn.linear_model import LogisticRegression
 
 from sklearn import metrics
 
+import tensorflow as tf
+from tensorflow import keras
+
 from utilities import Utilities 
 
 class ModelRunner: 
@@ -27,27 +30,42 @@ class ModelRunner:
         path_to_file = os.path.join(os.getcwd(), Utilities.get_prop_value(Utilities.FEATURE_CSV_KEY))        
         df = pd.read_csv(path_to_file, encoding=Utilities.get_file_encoding(path_to_file=path_to_file))
 
-        strt = time()
+        df['genre'] = df['genre'].astype('category')
+        df['genre'] = df['genre'].cat.codes
 
-        # X_train,X_test,y_train,y_test = train_test_split(df.iloc[:, 1:-1], df.iloc[:, -1],random_state=0)
-        # row_list, target = self.convert_data(X_train, y_train)
+        X = df.iloc[:, 1:-1].to_numpy()
+        Y = df.iloc[:, -1].to_numpy()        
 
-        # train_data = tf.data.Dataset.from_tensor_slices((row_list, target))
-        # train_data = train_data.shuffle(buffer_size=500).batch(50).repeat(200)
+        multi_model_start_time = time()
+        svm_acc, nb_acc, lr_acc = self.run_multiple_model(X, Y)
+        multi_model_end_time = time()
 
-        # test_data = tf.data.Dataset.from_tensor_slices((row_list, target))
+        nn_start_time = time()
+        nn_acc = self.run_nn(X, Y)
+        nn_end_time = time()
+        
+        print("SVM Report")
+        print("validation accuracy: {}, test accuracy: {}".format(svm_acc))
 
-        # self.run_model(train_data, test_data)
 
-        self.run_multiple_model(df)
-        end = time()
-        total = end - strt         
-        print("Total time : {} minutes".format(total/60))
+        print("Average Validation Accuracy")
+        print("SVM: {}; Logistic: {}; NB: {}".format(round(val_acc_svm, 4), round(val_acc_logistic, 4), round(val_acc_nb, 4)))
+
+        print("Test Accuracy")
+        print("SVM: {}; Logistic: {}; NB: {}".format(round(test_svm, 4), round(test_logit, 4), round(test_nb, 4)))
+
+        print("Test Accuracy")
+        print("SVM: {}; Logistic: {}; NB: {}".format(round(test_svm, 4), round(test_logit, 4), round(test_nb, 4)))
+
+
+
+        
+        # print("Total time : {} minutes".format(total/60))
         
         return
 
     def convert_data(self, a, b):
-        
+    
         row_list =[]     
 
         for index, rows in a.iterrows(): 
@@ -58,15 +76,40 @@ class ModelRunner:
         target = [rows for _, rows in b.items()]
             
         return row_list, target
+    
+    def run_nn(self, X, Y):
+
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state = 0, shuffle=True, stratify = Y)
+
+        train_data = tf.data.Dataset.from_tensor_slices((X_train, Y_train))
+        train_data = train_data.shuffle(buffer_size=500).batch(50).repeat(200)
+
+        test_data = tf.data.Dataset.from_tensor_slices((X_test, Y_test))
+        test_data = test_data.batch(64)        
+
+        model = keras.models.Sequential([
+            keras.layers.Dense(30, activation="relu", input_shape=X_train.shape[1:]),
+            keras.layers.Dense(50, activation="relu"),
+            keras.layers.Dense(50, activation="relu"),
+            keras.layers.Dense(1)
+        ])
         
-    def run_multiple_model(self, df):
+        model.compile(loss='categorical_crossentropy', 
+            metrics=['accuracy'], 
+            optimizer=keras.optimizers.RMSprop(lr=1e-3)
+        )
+
+        model.fit(train_data, epochs=10)
+
+        result = model.evaluate(test_data)        
+
+        return result[1]
+        
+    def run_multiple_model(self, X, Y):
 
         val_acc_svm = 0
         val_acc_logistic = 0
         val_acc_nb = 0
-
-        X = df.iloc[:, 1:-1].to_numpy()
-        Y = df.iloc[:, -1].to_numpy()
 
         X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.20, random_state = 0, shuffle=True, stratify = Y)
 
@@ -77,29 +120,27 @@ class ModelRunner:
             X_train, X_val = X_train_val[train_index], X_train_val[val_index]
             Y_train, Y_val = Y_train_val[train_index], Y_train_val[val_index]
             
-            val_acc_svm += perform_SVM(X_train, Y_train, X_val, Y_val)
-            val_acc_logistic += perform_Logistic(X_train, Y_train, X_val, Y_val)
-            val_acc_nb += perform_NB(X_train, Y_train, X_val, Y_val)            
+            val_acc_svm += self.perform_SVM(X_train, Y_train, X_val, Y_val)
+            val_acc_logistic += self.perform_Logistic(X_train, Y_train, X_val, Y_val)
+            val_acc_nb += self.perform_NB(X_train, Y_train, X_val, Y_val)            
 
         val_acc_svm = float(val_acc_svm/5)
         val_acc_logistic = float(val_acc_logistic/5)
         val_acc_nb = float(val_acc_nb/5) 
 
-        print("Average Validation Accuracy")
-        print("SVM: {}; Logistic: {}; NB: {}".format(round(val_acc_svm, 4), round(val_acc_logistic, 4), round(val_acc_nb, 4)))
+        
+        test_svm = self.perform_SVM(X_train, Y_train, X_val, Y_val)
+        test_logit = self.perform_Logistic(X_train, Y_train, X_val, Y_val)
+        test_nb = self.perform_NB(X_train, Y_train, X_val, Y_val)                
 
-        print("Test Accuracy")
-        test_svm = perform_SVM(X_train, Y_train, X_val, Y_val)
-        test_logit = perform_Logistic(X_train, Y_train, X_val, Y_val)
-        test_nb = perform_NB(X_train, Y_train, X_val, Y_val)
-        print("SVM: {}; Logistic: {}; NB: {}".format(round(test_svm, 4), round(test_logit, 4), round(test_nb, 4)))
+        return (val_acc_svm, test_svm), (val_acc_nb, test_nb), (val_acc_logistic, test_logit)
         
 
     def perform_SVM(self, X_train, Y_train, X_val, Y_val):
         # SVM 
         
         svm_clf = Pipeline([        
-            ("linear_svc", LinearSVC(C=1, loss="hinge")),
+            ("linear_svc", LinearSVC(C=1, loss="hinge", max_iter=-1)),
         ])
 
         # print("fitting data to SVM")
@@ -111,7 +152,7 @@ class ModelRunner:
 
     def perform_Logistic(self, X_train, Y_train, X_val, Y_val):
         
-        softmax_reg = LogisticRegression(multi_class="multinomial",solver="lbfgs", C=10)
+        softmax_reg = LogisticRegression(multi_class="multinomial",solver="lbfgs", C=10, max_iter=1000)
         # print("fitting data to Logistic")
         softmax_reg.fit(X_train, Y_train)
         Y_pred_logistic = softmax_reg.predict(X_val)    
