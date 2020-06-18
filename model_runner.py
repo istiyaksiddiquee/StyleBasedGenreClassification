@@ -37,7 +37,7 @@ class ModelRunner:
 
         pass 
 
-    def convert_data(a, b):
+    def convert_data(self, a, b):
         
         row_list =[]     
 
