@@ -8,13 +8,14 @@ from collections import Counter
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 
+from sklearn.preprocessing import StandardScaler
+
 from sklearn.svm import SVC
 from sklearn.svm import LinearSVC
 from sklearn.pipeline import Pipeline
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-
 from sklearn import metrics
 from sklearn  import feature_selection
 
@@ -46,22 +47,26 @@ class ModelRunner:
         Y = df.iloc[:, -1].to_numpy()        
 
         multi_model_start_time = time()
-        svm_acc, nb_acc, lr_acc, rf_acc = self.run_multiple_model(X, Y)
+        svm_acc_poly, svm_acc_rbf, nb_acc, lr_acc, rf_acc = self.run_multiple_model(X, Y)
         multi_model_end_time = time()
 
         nn_start_time = time()
         nn_acc = self.run_nn(X, Y)
         nn_end_time = time()
         
-        val_acc_svm, test_svm = svm_acc
+        val_acc_svm_poly, test_svm_poly = svm_acc_poly
+        val_acc_svm_rbf, test_svm_rbf = svm_acc_rbf
         val_acc_nb, test_nb = nb_acc
         val_acc_logistic, test_logistic = lr_acc
         val_acc_rf, test_rf = rf_acc
 
         print("Performance Report")
         print("--------------------------------------")
-        print("SVM Report")
-        print("validation accuracy: {}, test accuracy: {}".format(val_acc_svm, test_svm))
+        print("SVM With PolyKernel Report")
+        print("validation accuracy: {}, test accuracy: {}".format(val_acc_svm_poly, test_svm_poly))
+        
+        print("SVM With RBF-Kernel Report")
+        print("validation accuracy: {}, test accuracy: {}".format(val_acc_svm_rbf, test_svm_rbf))
         
         print("Multi-NB Report")
         print("validation accuracy: {}, test accuracy: {}".format(val_acc_nb, test_nb))
@@ -99,6 +104,8 @@ class ModelRunner:
 
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state = 0, shuffle=True, stratify = Y)
 
+        # X_train, Y_train = self.tackle_data_imbalance(X_train, Y_train)
+
         train_data = tf.data.Dataset.from_tensor_slices((X_train, Y_train))
         train_data = train_data.shuffle(buffer_size=500).batch(50).repeat(200)
 
@@ -125,7 +132,8 @@ class ModelRunner:
         
     def run_multiple_model(self, X, Y):
 
-        val_acc_svm = 0
+        val_acc_svm_poly = 0
+        val_acc_svm_rbf = 0
         val_acc_logistic = 0
         val_acc_nb = 0
         val_acc_rf = 0
@@ -144,43 +152,46 @@ class ModelRunner:
 
             X_train, Y_train = self.tackle_data_imbalance(X_train, Y_train)
             
-            val_acc_svm += self.perform_SVM(X_train, Y_train, X_val, Y_val)
+            val_acc_svm_poly += self.perform_SVM_with_Polynomial_kernel(X_train, Y_train, X_val, Y_val)
+            val_acc_svm_rbf += self.perform_SVM_with_RBF_kernel(X_train, Y_train, X_val, Y_val)
             val_acc_logistic += self.perform_Logistic(X_train, Y_train, X_val, Y_val)
             val_acc_nb += self.perform_NB(X_train, Y_train, X_val, Y_val)    
             val_acc_rf += self.perform_random_forrest(X_train, Y_train, X_val, Y_val)        
 
-        val_acc_svm = float(val_acc_svm/5)
+        val_acc_svm_poly = float(val_acc_svm_poly/5)
+        val_acc_svm_rbf = float(val_acc_svm_rbf/5)
         val_acc_logistic = float(val_acc_logistic/5)
         val_acc_nb = float(val_acc_nb/5) 
         val_acc_rf = float(val_acc_rf/5) 
         
-        test_svm = self.perform_SVM(X_train, Y_train, X_test, Y_test)
+        test_svm_poly = self.perform_SVM_with_Polynomial_kernel(X_train, Y_train, X_test, Y_test)
+        test_svm_rbf = self.perform_SVM_with_RBF_kernel(X_train, Y_train, X_test, Y_test)
         test_logit = self.perform_Logistic(X_train, Y_train, X_test, Y_test)
         test_nb = self.perform_NB(X_train, Y_train, X_test, Y_test)
         test_rf = self.perform_random_forrest(X_train, Y_train, X_test, Y_test)
 
-        return (val_acc_svm, test_svm), (val_acc_nb, test_nb), (val_acc_logistic, test_logit), (val_acc_rf, test_rf)
+        return (val_acc_svm_poly, test_svm_poly), (val_acc_svm_rbf, test_svm_rbf), (val_acc_nb, test_nb), (val_acc_logistic, test_logit), (val_acc_rf, test_rf)
         
 
-    def perform_SVM(self, X_train, Y_train, X_val, Y_val):
+    def perform_SVM_with_Polynomial_kernel(self, X_train, Y_train, X_val, Y_val):
         
-        # SVM 
-        
-        svm_clf = Pipeline([        
-            ("linear_svc", LinearSVC(C=1, loss="hinge", max_iter=-1)),
-        ])
-
         svm_clf = Pipeline([
             ("scaler", StandardScaler()),
             ("svm_clf", SVC(kernel="poly", degree=10, coef0=50, C=500))
         ])
-
-
-        # ("svm_clf", SVC(kernel="rbf", gamma=0.0001, C=0.1)) -> 28 
-        # ("svm_clf", SVC(kernel="poly", degree=10, coef0=50, C=500)) -> 30
-
-        # print("fitting data to SVM")
-        # svm_clf = SVC(gamma='auto')
+        
+        svm_clf.fit(X_train, Y_train)
+        Y_pred_svm = svm_clf.predict(X_val)
+        
+        return metrics.accuracy_score(Y_val, Y_pred_svm)
+    
+    def perform_SVM_with_RBF_kernel(self, X_train, Y_train, X_val, Y_val):
+        
+        svm_clf = Pipeline([
+            ("scaler", StandardScaler()),
+            ("svm_clf", SVC(kernel="rbf", gamma=0.0001, C=0.1))
+        ])
+        
         svm_clf.fit(X_train, Y_train)
         Y_pred_svm = svm_clf.predict(X_val)
         
@@ -188,27 +199,33 @@ class ModelRunner:
 
     def perform_Logistic(self, X_train, Y_train, X_val, Y_val):
         
-        softmax_reg = LogisticRegression(multi_class="multinomial",solver="lbfgs", C=10, max_iter=1000)
-        # print("fitting data to Logistic")
-        softmax_reg.fit(X_train, Y_train)
-        Y_pred_logistic = softmax_reg.predict(X_val)    
+        
+        clf = Pipeline([
+                ("scaler", StandardScaler()),
+                ("lr", LogisticRegression(multi_class="multinomial", solver="lbfgs", C=50, n_jobs=-1, class_weight='balanced'))
+            ])        
+                        
+        clf.fit(X_train, Y_train)
+        Y_pred_logistic = clf.predict(X_val)
         return metrics.accuracy_score(Y_val, Y_pred_logistic)
 
         # Multinomial Naive Bayes
 
     def perform_NB(self, X_train, Y_train, X_val, Y_val):
 
-        nb = MultinomialNB()
-        # print("fitting data to Naive Bayes")
+        nb = MultinomialNB(alpha=0.001)
         nb.fit(X_train, Y_train)
         Y_pred_nb = nb.predict(X_val)
         return metrics.accuracy_score(Y_val, Y_pred_nb)
 
     def perform_random_forrest(self, X_train, Y_train, X_val, Y_val):
 
-        clf = RandomForestClassifier(max_depth=2, random_state=0)
+        clf = Pipeline([
+            ("scaler", StandardScaler()),
+            ("rf", RandomForestClassifier())
+        ])
+        
         clf.fit(X_train, Y_train)
-
         Y_pred = clf.predict(X_val)
         return metrics.accuracy_score(Y_val, Y_pred)
 
@@ -216,8 +233,7 @@ class ModelRunner:
         ch2 = feature_selection.SelectKBest(feature_selection.chi2, k=k)
         X_train = ch2.fit_transform(X_train, Y_train)
         X_test = ch2.transform(X_test)
-        return X_train, X_test
-    
+        return X_train, X_test    
     
     def tackle_data_imbalance(self, X, Y):
         
