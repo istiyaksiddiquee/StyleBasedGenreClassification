@@ -22,14 +22,12 @@ class Initiator:
 
         if not os.path.exists(os.path.join(os.getcwd(), Utilities.get_prop_value(Utilities.DATA_POINT_KEY))):
             DataPointSelector.select_datapoints(path_to_base_folder)
-            return
         else: 
             print("Data Point CSV found in directory, continuing to Feature Extraction")
 
         if not os.path.exists(os.path.join(os.getcwd(), Utilities.get_prop_value(Utilities.FEATURE_CSV_KEY))):
             extractor = FeatureExtractor(base_folder_address=path_to_base_folder)
             extractor.extract_features()
-            return
         else: 
             print("Feature Vector CSV found in directory, continuing to Model Runner")
         
