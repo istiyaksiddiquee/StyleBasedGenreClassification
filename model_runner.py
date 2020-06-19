@@ -15,7 +15,7 @@ from sklearn.svm import LinearSVC
 from sklearn.pipeline import Pipeline
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn import metrics
 from sklearn  import feature_selection
 
@@ -47,7 +47,7 @@ class ModelRunner:
         Y = df.iloc[:, -1].to_numpy()        
 
         multi_model_start_time = time()
-        svm_acc_poly, svm_acc_rbf, nb_acc, lr_acc, rf_acc = self.run_multiple_model(X, Y)
+        svm_acc_poly, svm_acc_rbf, nb_acc, lr_acc, rf_acc, en_acc = self.run_multiple_model(X, Y)
         multi_model_end_time = time()
 
         nn_start_time = time()
@@ -59,6 +59,7 @@ class ModelRunner:
         val_acc_nb, test_nb = nb_acc
         val_acc_logistic, test_logistic = lr_acc
         val_acc_rf, test_rf = rf_acc
+        val_acc_ensemble, test_ensemble = en_acc
 
         print("Performance Report")
         print("--------------------------------------")
@@ -76,6 +77,9 @@ class ModelRunner:
 
         print("Random-Forrest Report")
         print("validation accuracy: {}, test accuracy: {}".format(val_acc_rf, test_rf))
+
+        print("Ensemble Report")
+        print("validation accuracy: {}, test accuracy: {}".format(val_acc_ensemble, test_ensemble))
 
         print("Neural Net Report")
         print("Accuracy: {}".format(nn_acc))
@@ -137,6 +141,7 @@ class ModelRunner:
         val_acc_logistic = 0
         val_acc_nb = 0
         val_acc_rf = 0
+        val_acc_ensemble = 0
 
         X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.20, random_state = 0, shuffle=True, stratify = Y)
 
@@ -156,21 +161,24 @@ class ModelRunner:
             val_acc_svm_rbf += self.perform_SVM_with_RBF_kernel(X_train, Y_train, X_val, Y_val)
             val_acc_logistic += self.perform_Logistic(X_train, Y_train, X_val, Y_val)
             val_acc_nb += self.perform_NB(X_train, Y_train, X_val, Y_val)    
-            val_acc_rf += self.perform_random_forrest(X_train, Y_train, X_val, Y_val)        
+            val_acc_rf += self.perform_random_forrest(X_train, Y_train, X_val, Y_val)
+            val_acc_ensemble += self.do_ensemble_and_learn(X_train, Y_train, X_val, Y_val)
 
         val_acc_svm_poly = float(val_acc_svm_poly/5)
         val_acc_svm_rbf = float(val_acc_svm_rbf/5)
         val_acc_logistic = float(val_acc_logistic/5)
         val_acc_nb = float(val_acc_nb/5) 
         val_acc_rf = float(val_acc_rf/5) 
+        val_acc_ensemble = float(val_acc_ensemble/5) 
         
         test_svm_poly = self.perform_SVM_with_Polynomial_kernel(X_train, Y_train, X_test, Y_test)
         test_svm_rbf = self.perform_SVM_with_RBF_kernel(X_train, Y_train, X_test, Y_test)
         test_logit = self.perform_Logistic(X_train, Y_train, X_test, Y_test)
         test_nb = self.perform_NB(X_train, Y_train, X_test, Y_test)
         test_rf = self.perform_random_forrest(X_train, Y_train, X_test, Y_test)
+        test_ensemble = self.do_ensemble_and_learn(X_train, Y_train, X_test, Y_test)
 
-        return (val_acc_svm_poly, test_svm_poly), (val_acc_svm_rbf, test_svm_rbf), (val_acc_nb, test_nb), (val_acc_logistic, test_logit), (val_acc_rf, test_rf)
+        return (val_acc_svm_poly, test_svm_poly), (val_acc_svm_rbf, test_svm_rbf), (val_acc_nb, test_nb), (val_acc_logistic, test_logit), (val_acc_rf, test_rf), (val_acc_ensemble, test_ensemble)
         
 
     def perform_SVM_with_Polynomial_kernel(self, X_train, Y_train, X_val, Y_val):
@@ -256,3 +264,27 @@ class ModelRunner:
         X, Y = over.fit_resample(X, Y)
         X, Y = under.fit_resample(X, Y)
         return X, Y
+
+    def do_ensemble_and_learn(self, X_train, Y_train, X_test, Y_test): 
+
+        clf1 = ("svm_clf", SVC(kernel="poly", degree=10, coef0=50, C=500))
+        clf2 = ("lr", LogisticRegression(multi_class="multinomial", solver="lbfgs", C=50, n_jobs=-1, class_weight='balanced'))
+        clf3 = ("rf", RandomForestClassifier())
+        
+        ensemble_clf = VotingClassifier(
+                    estimators=[
+                        clf1, 
+                        clf2,
+                        clf3
+                    ], 
+                    voting='hard'
+                )
+
+        eclf = Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", ensemble_clf)
+        ])
+
+        eclf = eclf.fit(X_train, Y_train)
+        Y_preds = eclf.predict(X_test)
+        return metrics.accuracy_score(Y_test, Y_preds)
