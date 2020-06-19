@@ -78,3 +78,28 @@ python -m pip install chardet numpy pandas nltk sklearn tensorflow
 
 
 
+
+
+
+
+
+
+
+
+
+notes on imblearn 
+
+without using imblearn
+SVM: 0.26; Logistic: 0.2467; NB: 0.1229; RB: 0.2743
+
+creating 20 data points for each group 
+SVM: 0.1229; Logistic: 0.1657; NB: 0.1657; RB: 0.261
+
+creating double of previous data points for each group 
+SVM: 0.261; Logistic: 0.2457; NB: 0.1648; RB: 0.2857
+
+combination of over and undersample 
+SVM: 0.1371; Logistic: 0.1648; NB: 0.1229; RB: 0.341
+
+
+

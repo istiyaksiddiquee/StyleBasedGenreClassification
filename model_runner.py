@@ -1,7 +1,9 @@
 import os 
-from time import time
+import operator
 import numpy as np
 import pandas as pd 
+from time import time
+from collections import Counter
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
@@ -14,9 +16,13 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
 from sklearn import metrics
+from sklearn  import feature_selection
 
 import tensorflow as tf
 from tensorflow import keras
+
+from imblearn.over_sampling import ADASYN
+from imblearn.under_sampling import RandomUnderSampler
 
 from utilities import Utilities 
 
@@ -30,6 +36,8 @@ class ModelRunner:
 
         path_to_file = os.path.join(os.getcwd(), Utilities.get_prop_value(Utilities.FEATURE_CSV_KEY))        
         df = pd.read_csv(path_to_file, encoding=Utilities.get_file_encoding(path_to_file=path_to_file))
+
+        df.drop(df.loc[df['genre'] == 'Allegories'].index, inplace=True)
 
         df['genre'] = df['genre'].astype('category')
         df['genre'] = df['genre'].cat.codes
@@ -124,12 +132,17 @@ class ModelRunner:
 
         X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.20, random_state = 0, shuffle=True, stratify = Y)
 
+        # selecting 10 best features
+        X_train_val, X_test = self.select_k_features(k=10, X_train=X_train_val, X_test=X_test, Y_train=Y_train_val)
+
         skf = StratifiedKFold(n_splits=5, shuffle=True)
 
         for train_index, val_index in skf.split(X_train_val, Y_train_val):
             
             X_train, X_val = X_train_val[train_index], X_train_val[val_index]
             Y_train, Y_val = Y_train_val[train_index], Y_train_val[val_index]
+
+            X_train, Y_train = self.tackle_data_imbalance(X_train, Y_train)
             
             val_acc_svm += self.perform_SVM(X_train, Y_train, X_val, Y_val)
             val_acc_logistic += self.perform_Logistic(X_train, Y_train, X_val, Y_val)
@@ -150,11 +163,21 @@ class ModelRunner:
         
 
     def perform_SVM(self, X_train, Y_train, X_val, Y_val):
+        
         # SVM 
         
         svm_clf = Pipeline([        
             ("linear_svc", LinearSVC(C=1, loss="hinge", max_iter=-1)),
         ])
+
+        svm_clf = Pipeline([
+            ("scaler", StandardScaler()),
+            ("svm_clf", SVC(kernel="poly", degree=10, coef0=50, C=500))
+        ])
+
+
+        # ("svm_clf", SVC(kernel="rbf", gamma=0.0001, C=0.1)) -> 28 
+        # ("svm_clf", SVC(kernel="poly", degree=10, coef0=50, C=500)) -> 30
 
         # print("fitting data to SVM")
         # svm_clf = SVC(gamma='auto')
@@ -188,3 +211,32 @@ class ModelRunner:
 
         Y_pred = clf.predict(X_val)
         return metrics.accuracy_score(Y_val, Y_pred)
+
+    def select_k_features(self, k, X_train, X_test, Y_train):
+        ch2 = feature_selection.SelectKBest(feature_selection.chi2, k=k)
+        X_train = ch2.fit_transform(X_train, Y_train)
+        X_test = ch2.transform(X_test)
+        return X_train, X_test
+    
+    
+    def tackle_data_imbalance(self, X, Y):
+        
+        counter = Counter(Y)
+        
+        total_classes = len(counter)
+        total_data_points = sum(counter.values())
+        expected_points = total_data_points*3
+        avg_points_per_class = int(expected_points/total_classes)
+        
+        # generating highest amount of data for each class 
+        # higest_key, highest_val = max(counter.items(), key=operator.itemgetter(1))
+        # famous_dict = dict((key, highest_val) for key in counter) 
+        
+        famous_dict = dict((key, avg_points_per_class) for key in counter) # generating double of previous for each class
+        
+        over = ADASYN(n_neighbors=1, sampling_strategy=famous_dict)    
+        under = RandomUnderSampler(sampling_strategy="auto")
+        
+        X, Y = over.fit_resample(X, Y)
+        X, Y = under.fit_resample(X, Y)
+        return X, Y
