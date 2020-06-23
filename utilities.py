@@ -11,10 +11,12 @@ class Utilities:
     PROPERTIES_FILE_NAME = "properties.config"
     BOOK_REPO_KEY = "BOOK_REPO_FOLDER"
     BOOK_DESCRIPTOR_KEY = "BOOK_DESCRIPTOR_CSV"
-    FEATURE_CSV_KEY = "FEATURE_CSV"
     DATA_POINT_KEY = "DATA_POINT_CSV"
     BOOK_ID_COLUMN = "book_id"
     GENRE_COLUMN = "guten_genre"
+    PYTHON_FEATURE_CSV='PYTHON_FEATURE_CSV'
+    JAVA_FEATURE_CSV='JAVA_FEATURE_CSV'
+    BAT_FILE_NAME='BAT_FILE_NAME'
 
     @classmethod
     def get_file_encoding(cls, path_to_file):

@@ -35,8 +35,26 @@ class ModelRunner:
 
     def drive_model_runner(self):
 
-        path_to_file = os.path.join(os.getcwd(), Utilities.get_prop_value(Utilities.FEATURE_CSV_KEY))        
-        df = pd.read_csv(path_to_file, encoding=Utilities.get_file_encoding(path_to_file=path_to_file))
+        columns_from_java_output = ['name', 'hyphens', 'colons', 'semi_colon', 'interjections', 'male_oriented', 'female_oriented', 'comma', 'period', 'fres']
+
+        name_of_python_output = Utilities.get_prop_value(Utilities.PYTHON_FEATURE_CSV)
+        name_of_java_output = Utilities.get_prop_value(Utilities.JAVA_FEATURE_CSV)
+
+        path_to_python_out = os.path.join(os.getcwd(), name_of_python_output)
+        path_to_java_out = os.path.join(os.getcwd(), name_of_java_output)
+
+        python_out = pd.read_csv(path_to_python_out)
+        java_out = pd.read_csv(path_to_java_out)
+
+        python_out.drop(['avg_punctuation_per_sentence'], axis=1, inplace=True)
+        java_out = java_out[columns_from_java_output]
+
+        df = python_out.merge(java_out, left_on='book_id', right_on='name')
+        df.drop(['name'], axis=1, inplace=True)
+
+        cols = list(df.columns.values)
+        cols.pop(cols.index('genre'))
+        df = df[cols+['genre']]
 
         df.drop(df.loc[df['genre'] == 'Allegories'].index, inplace=True)
 
@@ -44,7 +62,7 @@ class ModelRunner:
         df['genre'] = df['genre'].cat.codes
 
         X = df.iloc[:, 1:-1].to_numpy()
-        Y = df.iloc[:, -1].to_numpy()        
+        Y = df.iloc[:, -1].to_numpy()
 
         multi_model_start_time = time()
         svm_acc_poly, svm_acc_rbf, nb_acc, lr_acc, rf_acc, en_acc = self.run_multiple_model(X, Y)
@@ -108,7 +126,7 @@ class ModelRunner:
 
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state = 0, shuffle=True, stratify = Y)
 
-        # X_train, Y_train = self.tackle_data_imbalance(X_train, Y_train)
+        X_train, Y_train = self.tackle_data_imbalance(X_train, Y_train)
 
         train_data = tf.data.Dataset.from_tensor_slices((X_train, Y_train))
         train_data = train_data.shuffle(buffer_size=500).batch(50).repeat(200)
@@ -136,6 +154,7 @@ class ModelRunner:
         
     def run_multiple_model(self, X, Y):
 
+        n_split = 3
         val_acc_svm_poly = 0
         val_acc_svm_rbf = 0
         val_acc_logistic = 0
@@ -143,12 +162,12 @@ class ModelRunner:
         val_acc_rf = 0
         val_acc_ensemble = 0
 
-        X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.20, random_state = 0, shuffle=True, stratify = Y)
+        X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.25, random_state = 0, shuffle=True, stratify = Y)
 
-        # selecting 10 best features
-        X_train_val, X_test = self.select_k_features(k=10, X_train=X_train_val, X_test=X_test, Y_train=Y_train_val)
+        # selecting 20 best features
+        X_train_val, X_test = self.select_k_features(k=20, X_train=X_train_val, X_test=X_test, Y_train=Y_train_val)
 
-        skf = StratifiedKFold(n_splits=5, shuffle=True)
+        skf = StratifiedKFold(n_splits=n_split, shuffle=True)
 
         for train_index, val_index in skf.split(X_train_val, Y_train_val):
             
@@ -164,12 +183,12 @@ class ModelRunner:
             val_acc_rf += self.perform_random_forrest(X_train, Y_train, X_val, Y_val)
             val_acc_ensemble += self.do_ensemble_and_learn(X_train, Y_train, X_val, Y_val)
 
-        val_acc_svm_poly = float(val_acc_svm_poly/5)
-        val_acc_svm_rbf = float(val_acc_svm_rbf/5)
-        val_acc_logistic = float(val_acc_logistic/5)
-        val_acc_nb = float(val_acc_nb/5) 
-        val_acc_rf = float(val_acc_rf/5) 
-        val_acc_ensemble = float(val_acc_ensemble/5) 
+        val_acc_svm_poly = float(val_acc_svm_poly/n_split)
+        val_acc_svm_rbf = float(val_acc_svm_rbf/n_split)
+        val_acc_logistic = float(val_acc_logistic/n_split)
+        val_acc_nb = float(val_acc_nb/n_split) 
+        val_acc_rf = float(val_acc_rf/n_split) 
+        val_acc_ensemble = float(val_acc_ensemble/n_split) 
         
         test_svm_poly = self.perform_SVM_with_Polynomial_kernel(X_train, Y_train, X_test, Y_test)
         test_svm_rbf = self.perform_SVM_with_RBF_kernel(X_train, Y_train, X_test, Y_test)
@@ -210,7 +229,7 @@ class ModelRunner:
         
         clf = Pipeline([
                 ("scaler", StandardScaler()),
-                ("lr", LogisticRegression(multi_class="multinomial", solver="lbfgs", C=50, n_jobs=-1, class_weight='balanced'))
+                ("lr", LogisticRegression(multi_class="multinomial", solver="lbfgs", C=50, n_jobs=-1, class_weight='balanced', max_iter=10000))
             ])        
                         
         clf.fit(X_train, Y_train)
@@ -245,11 +264,12 @@ class ModelRunner:
     
     def tackle_data_imbalance(self, X, Y):
         
+        increase = 3
         counter = Counter(Y)
         
         total_classes = len(counter)
         total_data_points = sum(counter.values())
-        expected_points = total_data_points*3
+        expected_points = total_data_points*increase
         avg_points_per_class = int(expected_points/total_classes)
         
         # generating highest amount of data for each class 
@@ -268,7 +288,7 @@ class ModelRunner:
     def do_ensemble_and_learn(self, X_train, Y_train, X_test, Y_test): 
 
         clf1 = ("svm_clf", SVC(kernel="poly", degree=10, coef0=50, C=500))
-        clf2 = ("lr", LogisticRegression(multi_class="multinomial", solver="lbfgs", C=50, n_jobs=-1, class_weight='balanced'))
+        clf2 = ("lr", LogisticRegression(multi_class="multinomial", solver="lbfgs", C=50, n_jobs=-1, max_iter=10000))
         clf3 = ("rf", RandomForestClassifier())
         
         ensemble_clf = VotingClassifier(
