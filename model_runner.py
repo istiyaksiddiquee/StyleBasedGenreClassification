@@ -27,6 +27,8 @@ from imblearn.under_sampling import RandomUnderSampler
 
 from utilities import Utilities 
 
+from mlxtend.evaluate import bias_variance_decomp
+
 class ModelRunner: 
 
     def __init__(self, base_folder_address):
@@ -132,7 +134,7 @@ class ModelRunner:
         train_data = train_data.shuffle(buffer_size=500).batch(50).repeat(200)
 
         test_data = tf.data.Dataset.from_tensor_slices((X_test, Y_test))
-        test_data = test_data.batch(64)        
+        test_data = test_data.batch(64)
 
         model = keras.models.Sequential([
             keras.layers.Dense(30, activation="relu", input_shape=X_train.shape[1:]),
@@ -166,6 +168,8 @@ class ModelRunner:
 
         # selecting 20 best features
         X_train_val, X_test = self.select_k_features(k=20, X_train=X_train_val, X_test=X_test, Y_train=Y_train_val)
+
+        self.bias_variance_decomp(X_train_val, X_test, Y_train_val, Y_test)
 
         skf = StratifiedKFold(n_splits=n_split, shuffle=True)
 
@@ -308,3 +312,22 @@ class ModelRunner:
         eclf = eclf.fit(X_train, Y_train)
         Y_preds = eclf.predict(X_test)
         return metrics.accuracy_score(Y_test, Y_preds)
+
+    def bias_variance_decomp(self, X_train, X_test, Y_train, Y_test):
+        
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X=X_train)
+        X_test = scaler.transform(X_test)
+        rf = RandomForestClassifier()        
+
+        avg_expected_loss, avg_bias, avg_var = bias_variance_decomp(
+                rf, X_train, Y_train, X_test, Y_test, 
+                loss='0-1_loss')
+
+        print('Decomposing Bias and Variance of RandomForrest')
+        print('-------------------------------------------')
+        print('Average expected loss: %.3f' % avg_expected_loss)
+        print('Average bias: %.3f' % avg_bias)
+        print('Average variance: %.3f' % avg_var)
+        print('-------------------------------------------')
+        return
