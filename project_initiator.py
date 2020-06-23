@@ -45,10 +45,10 @@ class Initiator:
         if not os.path.exists(os.path.join(os.getcwd(), Utilities.get_prop_value(Utilities.JAVA_FEATURE_CSV))):
             
             bat_file_name = r'command.bat'
-            folder_path = os.path.join(path_to_base_folder, Utilities.get_prop_value(Utilities.BOOK_REPO_FOLDER))
+            folder_path = os.path.join(path_to_base_folder, Utilities.get_prop_value(Utilities.BOOK_REPO_KEY))
             output_file_name = ".\\" + Utilities.get_prop_value(Utilities.JAVA_FEATURE_CSV)
-            book_descriptor_file_name = ".\\" + Utilities.get_prop_value(Utilities.BOOK_DESCRIPTOR_CSV)
-            data_points_file_name = ".\\" + Utilities.get_prop_value(Utilities.DATA_POINT_CSV)
+            book_descriptor_file_name = ".\\" + Utilities.get_prop_value(Utilities.BOOK_DESCRIPTOR_KEY)
+            data_points_file_name = ".\\" + Utilities.get_prop_value(Utilities.DATA_POINT_KEY)
             
             java_start = time()
             x = subprocess.call([bat_file_name, folder_path, output_file_name, book_descriptor_file_name, data_points_file_name])
