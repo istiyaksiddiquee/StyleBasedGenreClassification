@@ -324,7 +324,7 @@ class ModelRunner:
                 rf, X_train, Y_train, X_test, Y_test, 
                 loss='0-1_loss')
 
-        print('Decomposing Bias and Variance of RandomForrest')
+        print('Decomposing Bias and Variance of RandomForest')
         print('-------------------------------------------')
         print('Average expected loss: %.3f' % avg_expected_loss)
         print('Average bias: %.3f' % avg_bias)
