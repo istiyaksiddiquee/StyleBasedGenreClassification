@@ -5,11 +5,12 @@ import codecs
 import chardet 
 import pandas as pd
 from time import time
-from linguistic_analysis import Linguistics
+
 from concurrent.futures import ThreadPoolExecutor, as_completed, wait
 
 from item import Item
 from utilities import Utilities
+from linguistic_analysis import Linguistics
 
 class FeatureExtractor: 
 

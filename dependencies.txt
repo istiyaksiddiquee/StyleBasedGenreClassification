@@ -1,1 +1,1 @@
-python -m pip install nltk beautifulsoup4 lxml 
+python -m pip install numpy pandas argparse chardet glob3 imblearn mlxtend sklearn nltk tensorflow
