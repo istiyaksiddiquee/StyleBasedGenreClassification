@@ -52,7 +52,7 @@ class FeatureExtractor:
                 'downtoner_ratio', 'amplifier_ratio', 'demonstrative_ratio', 'type_token_ratio', 'genre']
 
         df = pd.DataFrame(lines, columns=columns, index=None)
-        df.to_csv(Utilities.get_prop_value(Utilities.FEATURE_CSV_KEY), index=False)
+        df.to_csv(Utilities.get_prop_value(Utilities.PYTHON_FEATURE_CSV), index=False)
         
         print("writing features to file done.")
         return
