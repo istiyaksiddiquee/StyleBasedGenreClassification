@@ -21,6 +21,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 
 import tensorflow as tf
+import tensorflow_addons as tfa
 from tensorflow import keras
 
 from imblearn.over_sampling import ADASYN
@@ -72,15 +73,15 @@ class ModelRunner:
         nn_end_time = time()        
 
         multi_model_start_time = time()
-        self.run_multiple_model(X, Y)
+        # self.run_multiple_model(X, Y)
         multi_model_end_time = time()
 
         print("\nNeural Net Report")
-        print("Accuracy: {}".format(nn_acc))
+        print("Accuracy: {}".format(round(nn_acc, 4)))
         
         print("Timing Report")
         print("--------------------------------------")
-        print("Neural-Network : {} minutes".format((nn_end_time-nn_start_time)/60))
+        print("Neural-Network : {} minutes".format(round((nn_end_time-nn_start_time)/60, 4)))
         print("Rest of the algo : {} minutes".format((multi_model_end_time-multi_model_start_time)/60))
         print("\n")
         return
@@ -104,28 +105,43 @@ class ModelRunner:
 
         X_train, Y_train = self.tackle_data_imbalance(X_train, Y_train)
 
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+
         train_data = tf.data.Dataset.from_tensor_slices((X_train, Y_train))
         train_data = train_data.shuffle(buffer_size=500).batch(50).repeat(200)
 
         test_data = tf.data.Dataset.from_tensor_slices((X_test, Y_test))
         test_data = test_data.batch(64)
-
+                
+        # kernel_initializer=keras.initializers.RandomNormal(stddev=0.01), bias_initializer=initializers.Zeros()
+        
         model = keras.models.Sequential([
-            keras.layers.Dense(30, activation="relu", input_shape=X_train.shape[1:]),
-            keras.layers.Dense(50, activation="relu"),
-            keras.layers.Dense(50, activation="relu"),
+            keras.layers.Dense(1000, kernel_initializer=keras.initializers.RandomNormal(stddev=0.01), bias_initializer=keras.initializers.Zeros(), activation="relu", input_shape=X_train.shape[1:]),
+            keras.layers.BatchNormalization(), 
+            tfa.layers.Maxout(100), 
+            keras.layers.Dense(500, kernel_initializer=keras.initializers.RandomNormal(stddev=0.01), bias_initializer=keras.initializers.Zeros(), activation="relu"),            
+            keras.layers.BatchNormalization(), 
+            tfa.layers.Maxout(50), 
+            keras.layers.Dense(300, kernel_initializer=keras.initializers.RandomNormal(stddev=0.01), bias_initializer=keras.initializers.Zeros(), activation="relu"),            
+            keras.layers.BatchNormalization(), 
+            tfa.layers.Maxout(30), 
+            keras.layers.Dense(100, kernel_initializer=keras.initializers.RandomNormal(stddev=0.01), bias_initializer=keras.initializers.Zeros(), activation="relu"),
+            keras.layers.BatchNormalization(), 
+            tfa.layers.Maxout(10), 
+            keras.layers.Dropout(0.2), 
             keras.layers.Dense(1)
         ])
-        
+
         model.compile(loss='categorical_crossentropy', 
             metrics=['accuracy'], 
             optimizer=keras.optimizers.RMSprop(lr=1e-3)
         )
 
         model.fit(train_data, epochs=10)
-
-        result = model.evaluate(test_data)        
-
+        result = model.evaluate(test_data)
+        
         return result[1]
     
     def get_best_params(self, method, X, Y):
@@ -141,6 +157,7 @@ class ModelRunner:
                 'tol': [0.001, 0.005, 0.01, 0.05]
             }
         elif method == "SVM_RBF": 
+            
             method=SVC(kernel='rbf')
             param_dict={
                 'C': [0.01, 0.1, 1, 10, 100, 1000],
@@ -148,10 +165,14 @@ class ModelRunner:
                 'coef0': [ 0.05, 0.1, 0.5, 1, 5],
                 'tol': [0.001, 0.005, 0.01, 0.05]
             }
+
         elif method == 'MNB':
+            
             method = MultinomialNB()
-            param_dict = { 'alpha': [1000, 100, 10, 5, 1, 0.5, 0.1, 0, 0.05, 0.01, 0.001]}
+            param_dict = {'alpha': [1000, 100, 10, 5, 1, 0.5, 0.1, 0, 0.05, 0.01, 0.001]}
+
         elif method == "LR": 
+
             method=LogisticRegression()
             param_dict={
                 'C': [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5],
@@ -162,7 +183,9 @@ class ModelRunner:
                 'class_weight': ['balanced'], 
                 'max_iter': [10000]
             }
+
         elif method == 'RF':
+
             method=RandomForestClassifier()
             param_dict={
                 'criterion': ['gini', 'entropy'], 
@@ -175,7 +198,7 @@ class ModelRunner:
 
     def run_multiple_model(self, X, Y):
 
-        n_split = 3
+        n_split = 5
         
         val_acc_svm_poly = 0
         val_acc_svm_rbf = 0
@@ -318,7 +341,7 @@ class ModelRunner:
         test_svm_poly_acc, test_svm_poly_precision, test_svm_poly_recall, test_svm_poly_f1 = self.perform_SVM_with_Polynomial_kernel(poly_svm_best_params, X_train, Y_train, X_test, Y_test)
         test_svm_rbf_acc, test_svm_rbf_precision, test_svm_rbf_recall, test_svm_rbf_f1 = self.perform_SVM_with_RBF_kernel(rbf_svm_best_params, X_train, Y_train, X_test, Y_test)
         test_logit_acc, test_logit_precision, test_logit_recall, test_logit_f1 = self.perform_Logistic(lr_best_params, X_train, Y_train, X_test, Y_test)
-        test_nb_acc, test_nb_precision,test_nb_recall, test_nb_f1 = self.perform_NB(nb_best_params, X_train, Y_train, X_test, Y_test)
+        test_nb_acc, test_nb_precision, test_nb_recall, test_nb_f1 = self.perform_NB(nb_best_params, X_train, Y_train, X_test, Y_test)
         test_rf_acc, test_rf_precision, test_rf_recall, test_rf_f1 = self.perform_random_forest(rf_best_params, X_train, Y_train, X_test, Y_test)
         test_ensemble_acc, test_ensemble_precision, test_ensemble_recall, test_ensemble_f1 = self.do_ensemble_and_learn(rf_best_params, lr_best_params, poly_svm_best_params, X_train, Y_train, X_test, Y_test)
 
