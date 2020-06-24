@@ -75,14 +75,14 @@ class ModelRunner:
         self.run_multiple_model(X, Y)
         multi_model_end_time = time()
 
-        print("Neural Net Report")
+        print("\nNeural Net Report")
         print("Accuracy: {}".format(nn_acc))
         
         print("Timing Report")
         print("--------------------------------------")
         print("Neural-Network : {} minutes".format((nn_end_time-nn_start_time)/60))
         print("Rest of the algo : {} minutes".format((multi_model_end_time-multi_model_start_time)/60))
-        
+        print("\n")
         return
 
     def convert_data(self, a, b):
@@ -324,37 +324,37 @@ class ModelRunner:
 
         print("Performance Report")
         print("--------------------------------------")
-        print("SVM With PolyKernel Report")
+        print("\nSVM With PolyKernel Report")
         print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_svm_poly, 4), round(test_svm_poly_acc, 4)))
         print("validation precision: {}, test precision: {}".format(round(val_precision_svm_poly, 4), round(test_svm_poly_precision, 4)))
         print("validation recall: {}, test recall: {}".format(round(val_recall_svm_poly, 4), round(test_svm_poly_recall, 4)))
         print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_svm_poly, 4), round(test_svm_poly_f1, 4)))
         
-        print("SVM With RBF-Kernel Report")
+        print("\nSVM With RBF-Kernel Report")
         print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_svm_rbf, 4), round(test_svm_rbf_acc, 4)))
         print("validation precision: {}, test precision: {}".format(round(val_precision_svm_rbf, 4), round(test_svm_rbf_precision, 4)))
         print("validation recall: {}, test recall: {}".format(round(val_recall_svm_rbf, 4), round(test_svm_rbf_recall, 4)))
         print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_svm_rbf, 4), round(test_svm_rbf_f1, 4)))
         
-        print("Multi-NB Report")
+        print("\nMulti-NB Report")
         print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_nb, 4), round(test_nb_acc, 4)))
         print("validation precision: {}, test precision: {}".format(round(val_precision_nb, 4), round(test_nb_precision, 4)))
         print("validation recall: {}, test recall: {}".format(round(val_recall_nb, 4), round(test_nb_recall, 4)))
         print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_nb, 4), round(test_nb_f1, 4)))
         
-        print("Multi-Logistic Report")
+        print("\nMulti-Logistic Report")
         print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_logistic, 4), round(test_logit_acc, 4)))
         print("validation precision: {}, test precision: {}".format(round(val_precision_logistic, 4), round(test_logit_precision, 4)))
         print("validation recall: {}, test recall: {}".format(round(val_recall_logistic, 4), round(test_logit_recall, 4)))
         print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_logistic, 4), round(test_logit_f1, 4)))
 
-        print("Random-Forrest Report")
+        print("\nRandom-Forrest Report")
         print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_rf, 4), round(test_rf_acc, 4)))
         print("validation precision: {}, test precision: {}".format(round(val_precision_rf, 4), round(test_rf_precision, 4)))
         print("validation recall: {}, test recall: {}".format(round(val_recall_rf, 4), round(test_rf_recall, 4)))
         print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_rf, 4), round(test_rf_f1, 4)))
 
-        print("Ensemble Report")
+        print("\nEnsemble Report")
         print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_ensemble, 4), round(test_ensemble_acc, 4)))
         print("validation precision: {}, test precision: {}".format(round(val_precision_ensemble, 4), round(test_ensemble_precision, 4)))
         print("validation recall: {}, test recall: {}".format(round(val_recall_ensemble, 4), round(test_ensemble_recall, 4)))

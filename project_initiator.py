@@ -66,4 +66,4 @@ class Initiator:
 
         end = time()
         total = end-start
-        print("Total Time : {} minutes".format((end - start)/60))
+        print("Total Time for the whole process : {} minutes".format((end - start)/60))
