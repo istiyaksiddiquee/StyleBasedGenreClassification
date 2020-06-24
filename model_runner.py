@@ -67,13 +67,13 @@ class ModelRunner:
         X = df.iloc[:, 1:-1].to_numpy()
         Y = df.iloc[:, -1].to_numpy()
 
-        multi_model_start_time = time()
-        self.run_multiple_model(X, Y)
-        multi_model_end_time = time()
-
         nn_start_time = time()
         nn_acc = self.run_nn(X, Y)
         nn_end_time = time()        
+
+        multi_model_start_time = time()
+        self.run_multiple_model(X, Y)
+        multi_model_end_time = time()
 
         print("Neural Net Report")
         print("Accuracy: {}".format(nn_acc))
@@ -205,7 +205,6 @@ class ModelRunner:
         val_f1_rf = 0
         val_f1_ensemble = 0
 
-
         X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.25, random_state = 0, shuffle=True, stratify = Y)
 
         # selecting 20 best features
@@ -326,40 +325,40 @@ class ModelRunner:
         print("Performance Report")
         print("--------------------------------------")
         print("SVM With PolyKernel Report")
-        print("validation accuracy: {}, test accuracy: {}".format(val_acc_svm_poly, test_svm_poly_acc))
-        print("validation precision: {}, test precision: {}".format(val_precision_svm_poly, test_svm_poly_precision))
-        print("validation recall: {}, test recall: {}".format(val_recall_svm_poly, test_svm_poly_recall))
-        print("validation f1_score: {}, test f1_score: {}".format(val_f1_svm_poly, test_svm_poly_f1))
+        print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_svm_poly, 4), round(test_svm_poly_acc, 4)))
+        print("validation precision: {}, test precision: {}".format(round(val_precision_svm_poly, 4), round(test_svm_poly_precision, 4)))
+        print("validation recall: {}, test recall: {}".format(round(val_recall_svm_poly, 4), round(test_svm_poly_recall, 4)))
+        print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_svm_poly, 4), round(test_svm_poly_f1, 4)))
         
         print("SVM With RBF-Kernel Report")
-        print("validation accuracy: {}, test accuracy: {}".format(val_acc_svm_rbf, test_svm_rbf_acc))
-        print("validation precision: {}, test precision: {}".format(val_precision_svm_rbf, test_svm_rbf_precision))
-        print("validation recall: {}, test recall: {}".format(val_recall_svm_rbf, test_svm_rbf_recall))
-        print("validation f1_score: {}, test f1_score: {}".format(val_f1_svm_rbf, test_svm_rbf_f1))
+        print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_svm_rbf, 4), round(test_svm_rbf_acc, 4)))
+        print("validation precision: {}, test precision: {}".format(round(val_precision_svm_rbf, 4), round(test_svm_rbf_precision, 4)))
+        print("validation recall: {}, test recall: {}".format(round(val_recall_svm_rbf, 4), round(test_svm_rbf_recall, 4)))
+        print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_svm_rbf, 4), round(test_svm_rbf_f1, 4)))
         
         print("Multi-NB Report")
-        print("validation accuracy: {}, test accuracy: {}".format(val_acc_nb, test_nb_acc))
-        print("validation precision: {}, test precision: {}".format(val_precision_nb, test_nb_precision))
-        print("validation recall: {}, test recall: {}".format(val_recall_nb, test_nb_recall))
-        print("validation f1_score: {}, test f1_score: {}".format(val_f1_nb, test_nb_f1))
+        print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_nb, 4), round(test_nb_acc, 4)))
+        print("validation precision: {}, test precision: {}".format(round(val_precision_nb, 4), round(test_nb_precision, 4)))
+        print("validation recall: {}, test recall: {}".format(round(val_recall_nb, 4), round(test_nb_recall, 4)))
+        print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_nb, 4), round(test_nb_f1, 4)))
         
         print("Multi-Logistic Report")
-        print("validation accuracy: {}, test accuracy: {}".format(val_acc_logistic, test_logit_acc))
-        print("validation precision: {}, test precision: {}".format(val_precision_logistic, test_logit_precision))
-        print("validation recall: {}, test recall: {}".format(val_recall_logistic, test_logit_recall))
-        print("validation f1_score: {}, test f1_score: {}".format(val_f1_logistic, test_logit_f1))
+        print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_logistic, 4), round(test_logit_acc, 4)))
+        print("validation precision: {}, test precision: {}".format(round(val_precision_logistic, 4), round(test_logit_precision, 4)))
+        print("validation recall: {}, test recall: {}".format(round(val_recall_logistic, 4), round(test_logit_recall, 4)))
+        print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_logistic, 4), round(test_logit_f1, 4)))
 
         print("Random-Forrest Report")
-        print("validation accuracy: {}, test accuracy: {}".format(val_acc_rf, test_rf_acc))
-        print("validation precision: {}, test precision: {}".format(val_precision_rf, test_rf_precision))
-        print("validation recall: {}, test recall: {}".format(val_recall_rf, test_rf_recall))
-        print("validation f1_score: {}, test f1_score: {}".format(val_f1_rf, test_rf_f1))
+        print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_rf, 4), round(test_rf_acc, 4)))
+        print("validation precision: {}, test precision: {}".format(round(val_precision_rf, 4), round(test_rf_precision, 4)))
+        print("validation recall: {}, test recall: {}".format(round(val_recall_rf, 4), round(test_rf_recall, 4)))
+        print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_rf, 4), round(test_rf_f1, 4)))
 
         print("Ensemble Report")
-        print("validation accuracy: {}, test accuracy: {}".format(val_acc_ensemble, test_ensemble_acc))
-        print("validation precision: {}, test precision: {}".format(val_precision_ensemble, test_ensemble_precision))
-        print("validation recall: {}, test recall: {}".format(val_recall_ensemble, test_ensemble_recall))
-        print("validation f1_score: {}, test f1_score: {}".format(val_f1_ensemble, test_ensemble_f1))
+        print("validation accuracy: {}, test accuracy: {}".format(round(val_acc_ensemble, 4), round(test_ensemble_acc, 4)))
+        print("validation precision: {}, test precision: {}".format(round(val_precision_ensemble, 4), round(test_ensemble_precision, 4)))
+        print("validation recall: {}, test recall: {}".format(round(val_recall_ensemble, 4), round(test_ensemble_recall, 4)))
+        print("validation f1_score: {}, test f1_score: {}".format(round(val_f1_ensemble, 4), round(test_ensemble_f1, 4)))
         
         return         
 
@@ -549,7 +548,6 @@ class ModelRunner:
         X, Y = over.fit_resample(X, Y)
         X, Y = under.fit_resample(X, Y)
         return X, Y
-
 
     def bias_variance_decomp(self, X_train, X_test, Y_train, Y_test):
         

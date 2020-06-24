@@ -12,6 +12,8 @@ class Initiator:
     @classmethod
     def start_processing(cls, path_to_base_folder):
         
+        start = time()
+
         Utilities.prepare_properties_dictionary()
         
         if not os.path.exists(os.path.join(path_to_base_folder, Utilities.get_prop_value(Utilities.BOOK_DESCRIPTOR_KEY))):
@@ -61,3 +63,7 @@ class Initiator:
         
         runner = ModelRunner(path_to_base_folder)
         runner.drive_model_runner()
+
+        end = time()
+        total = end-start
+        print("Total Time : {} minutes".format((end - start)/60))
