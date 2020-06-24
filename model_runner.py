@@ -73,7 +73,7 @@ class ModelRunner:
         nn_end_time = time()        
 
         multi_model_start_time = time()
-        # self.run_multiple_model(X, Y)
+        self.run_multiple_model(X, Y)
         multi_model_end_time = time()
 
         print("\nNeural Net Report")
